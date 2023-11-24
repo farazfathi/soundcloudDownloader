@@ -59,6 +59,7 @@ class soundcloudDownloader
             $url_info = parse_url($url);
             $url_info['host'] = str_replace("www.", "", strtolower($url_info['host']));
             if ($url_info['host'] != 'soundcloud.com') $run = false;
+            else $url = "https://".$url_info['host'].$url_info['path'];
         }
         if ($run) {
             $data = file_get_contents($url);
