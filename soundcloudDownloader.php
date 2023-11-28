@@ -4,11 +4,13 @@ class soundcloudDownloader
     public $client_id = false;
     private function findDownloadLink(array $v)
     {
-        foreach ($v['media']['transcodings'] as $t) if (stristr($t['url'], 'progressive')) {
+        $data = [];
+        foreach ($v['media']['transcodings'] as $t) {
             if (!$this->client_id) $this->clientId();
-            return $this->get($t['url'] . "?client_id=" . $this->client_id . "&track_authorization=" . $v['track_authorization'])['url'];
+            $t['download'] = $this->get($t['url'] . "?client_id=" . $this->client_id . "&track_authorization=" . $v['track_authorization'])['url'];
+            $data[] = $t;
         }
-        return false;
+        return $data;
     }
     private function resolveShortUrl($url)
     {
@@ -32,6 +34,24 @@ class soundcloudDownloader
     {
         $this->client_id = $token;
     }
+
+    public function download(string $url)
+    {
+        $url_info = parse_url($url);
+        $ext = pathinfo($url_info['path'], PATHINFO_EXTENSION);
+        if ($ext == 'mp3') return file_get_contents($url);
+        else {
+            $m3u_data = file_get_contents($url);
+            $final = '';
+            $lines = explode("\n", $m3u_data);
+            foreach ($lines as $line) {
+                if (empty($line) || $line[0] == '#') continue;
+                $final .=  file_get_contents($line);
+            }
+            return $final;
+        }
+    }
+
     public function clientId(): string
     {
         $data = file_get_contents('https://soundcloud.com');
@@ -49,7 +69,7 @@ class soundcloudDownloader
         if (!$this->client_id) $this->clientId();
         return $this->get("https://api-v2.soundcloud.com/search", ['client_id' => $this->client_id, 'q' => urlencode($value), 'offset' => $offset, 'limit' => $limit]);
     }
-    public function urlData(string $url)
+    public function url(string $url)
     {
         $run = true;
         $url_info = parse_url($url);
@@ -59,27 +79,28 @@ class soundcloudDownloader
             $url_info = parse_url($url);
             $url_info['host'] = str_replace("www.", "", strtolower($url_info['host']));
             if ($url_info['host'] != 'soundcloud.com') $run = false;
-            else $url = "https://".$url_info['host'].$url_info['path'];
+            else $url = "https://" . $url_info['host'] . $url_info['path'];
         }
         if ($run) {
             $data = file_get_contents($url);
             $x = strpos($data, "__sc_hydration =") + strlen("__sc_hydration =");
             $data = substr($data, $x, strpos($data, ";</", $x) - $x);
-            $data = json_decode($data, true);
-            foreach ($data as $k => $v) if (!in_array($v['hydratable'], ['sound', 'user', 'playlist'])) unset($data[$k]);
+            $xdata = json_decode($data, true);
+            $data = [];
+            foreach ($xdata as $k => $v) if (in_array($v['hydratable'], ['sound', 'user', 'playlist']))  $data[($v['hydratable'] == 'sound') ? 'track' : $v['hydratable']] = $v;
             foreach ($data as $v) if ($v['hydratable'] == 'sound') {
                 $dl = $this->findDownloadLink($v['data']);
-                if ($dl != false) $data[] = ['download_url' => $dl];
+                if ($dl != false) $data['download'] = $dl;
             }
-            return array_values($data);
+            return $data;
         } else return [];
     }
     public function track(string $id): array
     {
         if (!$this->client_id) $this->clientId();
-        $data = $this->get("https://api-v2.soundcloud.com/tracks", ['client_id' => $this->client_id, 'ids' => $id]);
-        $dl = $this->findDownloadLink($data[0]);
-        if ($dl != false) $data[] = ['download_url' => $dl];
+        $data = ['track' => $this->get("https://api-v2.soundcloud.com/tracks", ['client_id' => $this->client_id, 'ids' => $id])[0]];
+        $dl = $this->findDownloadLink($data['track']);
+        if ($dl != false) $data['download'] = $dl;
         return $data;
     }
     public function userAlbums(string $id, int $limit = 20, int $offset = 0): array
