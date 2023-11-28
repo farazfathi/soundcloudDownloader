@@ -88,10 +88,17 @@ class soundcloudDownloader
             $xdata = json_decode($data, true);
             $data = [];
             foreach ($xdata as $k => $v) if (in_array($v['hydratable'], ['sound', 'user', 'playlist']))  $data[($v['hydratable'] == 'sound') ? 'track' : $v['hydratable']] = $v;
-            foreach ($data as $v) if ($v['hydratable'] == 'sound') {
-                $dl = $this->findDownloadLink($v['data']);
-                if ($dl != false) $data['download'] = $dl;
+            $scopes = [];
+            foreach ($data as $v) {
+                $scopes[$v['hydratable']] = 1;
+                if ($v['hydratable'] == 'sound') {
+                    $dl = $this->findDownloadLink($v['data']);
+                    if ($dl != false) $data['download'] = $dl;
+                }
             }
+            if (isset($scopes['sound'])) $data['type'] = 'track';
+            else if (isset($scopes['playlist'])) $data['type'] = 'playlist';
+            else if (isset($scopes['user'])) $data['type'] = 'user';
             return $data;
         } else return [];
     }
