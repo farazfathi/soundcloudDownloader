@@ -8,7 +8,7 @@ require 'path/to/soundcloudDownloader.php';
 ```
 check examples.php for testing library
 
-## download a music
+## Download a music
 you must use two methods for this proccess
 ```php
 require 'soundcloudDownloader.php';
@@ -21,7 +21,7 @@ $download_links = $track_data['download'];
 // download a url
 // please use download() method for download automatically progressive or stream urls
 $path = 'my_music.mp3';
-$file_content = $sc->download($track_data['download'][0]['download']);
+$file_content = $sc->download($download_links[0]['download']);
 // download :
 file_put_contents($path,$file_content);
 ```
