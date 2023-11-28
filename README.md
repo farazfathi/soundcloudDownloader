@@ -8,15 +8,33 @@ require 'path/to/soundcloudDownloader.php';
 ```
 check examples.php for testing library
 
+## download a music
+you must use two methods for this proccess
+```php
+require 'soundcloudDownloader.php';
+$sc = new soundcloudDownloader();
+// you need access to track page first :
+$track_data = $sc->url('https://soundcloud.com/therug13/silent-heart');
+// all available download links
+$download_links = $track_data['download'];
+
+// download a url
+// please use download() method for download automatically progressive or stream urls
+$path = 'my_music.mp3';
+$file_content = $sc->download($track_data['download'][0]['download']);
+// download :
+file_put_contents($path,$file_content);
+```
+
 ## a simple request
 you can download a track with two ways :
 ```php
 require 'soundcloudDownloader.php';
 $sc = new soundcloudDownloader();
 // #1 download a track by page URL :
-$track_data = $sc->urlData('https://soundcloud.com/therug13/silent-heart');
+$track_data = $sc->url('https://soundcloud.com/therug13/silent-heart');
 //    you can also use a shorted URL :
-$track_data = $sc->urlData('https://soundcloud.app.goo.gl/CmeEF');
+$track_data = $sc->url('https://soundcloud.app.goo.gl/CmeEF');
 
 // #2 if you have track ID can use ( track ) method
 $track_data = $sc->track('1304378476');
@@ -28,11 +46,11 @@ this method returns any contents data with their URL
 require 'soundcloudDownloader.php';
 $sc = new soundcloudDownloader();
 // access to a track :
-$track_data = $sc->urlData('https://soundcloud.com/therug13/silent-heart');
+$track_data = $sc->url('https://soundcloud.com/therug13/silent-heart');
 // access to an album :
-$album_data = $sc->urlData('https://soundcloud.com/therug13/sets/relaxing-with-trap');
+$album_data = $sc->url('https://soundcloud.com/therug13/sets/relaxing-with-trap');
 // access to an artist :
-$artist_data = $sc->urlData('https://soundcloud.com/therug13');
+$artist_data = $sc->url('https://soundcloud.com/therug13');
 ```
 
 ## search into soundcloud
@@ -66,7 +84,7 @@ require 'soundcloudDownloader.php';
 $sc = new soundcloudDownloader();
 
 // access to an artist :
-$artist_data = $sc->urlData('https://soundcloud.com/therug13');
+$artist_data = $sc->url('https://soundcloud.com/therug13');
 $artist_id = $artist_data['user']['id'];
 
 $limit = 20; // this parameter into all methods is optional
